@@ -1,0 +1,7 @@
+{
+  "install": "npm install",
+  "start": "node index.js", 
+  "watchPatterns": ["*.js", "static/**"],
+  "restartable": false,
+  "throttle": 1000
+} 

